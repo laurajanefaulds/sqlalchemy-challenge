@@ -30,7 +30,8 @@ app = Flask(__name__)
 
 # Flask Routes
 # Create our session (link) from Python to the DB (inside each function)
-session = Session(engine)
+
+# Create Home Route
 
 @app.route('/')
 def home():
@@ -40,9 +41,11 @@ def home():
         "/api/v1.0/stations<br>"
         "/api/v1.0/tobs<br>"
         "/api/v1.0/start_date<br/>"
- #       "/api/v1.0/<start/<end><br>"
+        "/api/v1.0/start_end_date<br/>"
     )
     return content
+
+# Add Precipitation Route and convert to Dictionary
 
 @app.route("/api/v1.0/precipitation")
 def precipitation():
@@ -62,6 +65,8 @@ def precipitation():
         scores_dict.append(score_dict)
     return jsonify(scores_dict)
 
+# Add Stations route and convert to dictionary
+
 @app.route("/api/v1.0/stations")
 def stations():
     session = Session(engine)
@@ -73,6 +78,8 @@ def stations():
         }
         total_stations_dict.append(station_dict)
     return jsonify(total_stations_dict)
+
+# Add Tobs route and convert to dictionary
 
 @app.route("/api/v1.0/tobs")
 def tobs():
@@ -98,6 +105,7 @@ def tobs():
         last_twelve_months_dict.append(date_temp_dict)
     return jsonify(last_twelve_months_dict)
 
+# Add Start Date route and convert to dictionary
 
 @app.route("/api/v1.0/start_date/<start_date>")
 def temperature_start(start_date=None):
@@ -124,25 +132,32 @@ def temperature_start(start_date=None):
 
     return jsonify(start_date_dict)
 
+# Add Start/End Date route and convert to dictionary
 
-# @app.route("/api/v1.0/start_end_date/<start>/<end>")
-# def temperature_start_end(start=None, end=None):
-#     start_date = dt.date.fromisoformat(start)
-#     end_date = dt.date.fromisoformat(end)
-#     temp_stats = session.query(
-#         func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs))\
-#         .filter(Measurement.date >= start_date)\
-#         .filter(Measurement.date <= end_date)\
-#         .all()
-#     start_end_date_dict = []
-#     for row in temp_stats:
-#         stat_dict = {
-#             "minimum temperature": row[0],
-#             "maximum temperature": row[1],
-#             "average temperature": row[2]
-#         }
-#         start_end_date_dict.append(stat_dict)
-#     return jsonify(start_end_date_dict)
+
+@app.route("/api/v1.0/start_end_date/<start>/<end>")
+def temperature_start_end(start=None, end=None):
+    engine = create_engine("sqlite:///Resources/hawaii.sqlite")
+    session = Session(engine)
+    start_date = dt.date.fromisoformat(start)
+    end_date = dt.date.fromisoformat(end)
+    temp_stats = session.query(
+        func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs))\
+        .filter(Measurement.date >= start_date)\
+        .filter(Measurement.date <= end_date)\
+        .all()
+    
+    session.close()
+
+    start_end_date_dict = []
+    for row in temp_stats:
+        stat_dict = {
+            "minimum temperature": row[0],
+            "maximum temperature": row[1],
+            "average temperature": row[2]
+        }
+        start_end_date_dict.append(stat_dict)
+    return jsonify(start_end_date_dict)
 
 # Run the app
 if __name__ == "__main__":
